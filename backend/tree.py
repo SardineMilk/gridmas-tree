@@ -29,6 +29,9 @@ class Tree():
         self._num_pixels = int(len(self._coords))
         """The number of pixels on the tree"""
 
+        self._colors = [0]*self._num_pixels
+        """Color array of the tree"""
+
         self._height = np.max(self._coords[:, 2])
         """The height of the tree"""
 
@@ -69,39 +72,37 @@ class Tree():
     def _request_frame(self):
         """For internal use
         return the current pixel buffer"""
-        colors: list[int] = []
+
+        # Local variables to reduce expensive attribute lookups
+        pixels = self._pixels   
+        colors = self._colors
+        shapes = self._shapes
 
         # loop for every pixel and determine what color it should be
         for i in range(self._num_pixels):
+            p = pixels[i]
+            p.cont_lerp()
+
+            colors[i] = p.to_bit_string()
 
             # 1. check if the pixel has been directly changed
-            if self._pixels[i]._changed:
-                colors.append(self._pixels[i].to_bit_string())
-                self._pixels[i]._changed = False
+            if p._changed:
+                p._changed = False
                 continue
 
             # 2. check for objects
-            changed = False
-            for shape in reversed(self._shapes):
-                c = shape.does_draw(self._pixels[i])
+            for shape in reversed(shapes):
+                c = shape.does_draw(p)
                 if c is not None:
-                    colors.append(c.to_bit_string())
-                    self._pixels[i].set(c)
-                    changed = True
-                    break
-            if changed:
-                continue
-
+                    colors[i] = c.to_bit_string()
+                    p.set(c)
+                    continue
+                
             # 3. check for background
             if self._background:
-                colors.append(self._background.to_bit_string())
+                colors[i] = self._background.to_bit_string()
                 continue
 
-            # default last color used.
-            colors.append(self._pixels[i].to_bit_string())
-
-        for i in range(self._num_pixels):
-            self._pixels[i].cont_lerp()
 
         self._shapes = []
         self._frame += 1
