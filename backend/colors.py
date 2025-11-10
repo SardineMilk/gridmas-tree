@@ -595,7 +595,7 @@ class Pixel(Color):
                 ```
         """
         neighbor_indices = self._tree._pixel_neighbour_indices[self._id, :n]
-        return self._tree._pixels[neighbor_indices]
+        return list(zip(self._tree._pixels[neighbor_indices], self._tree._distances[self._id, neighbor_indices]))
     
     def within(self, d: float) -> list["Pixel"]:
         """Find all pixels that are within a certain radius
