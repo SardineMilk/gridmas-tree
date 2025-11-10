@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from geometry import Shape
 
+import numpy as np
 
 class Tree():
     """This is a class which holds the tree data, it shouldn't be used directly """
@@ -23,16 +24,19 @@ class Tree():
         Initialise / reset the tree"""
         
         self._coords = read_tree_csv(tree_file)
-        """The coordinates of all lights on the tree"""
+        """Array of the coordinates of all lights on the tree"""
 
         self._num_pixels = int(len(self._coords))
         """The number of pixels on the tree"""
 
-        self._height = max([x[2] for x in self._coords])
+        self._height = np.max(self._coords[:, 2])
         """The height of the tree"""
 
-        self._pixels: list[Pixel] = [Pixel(i, (x[0], x[1], x[2]), self) for i, x in enumerate(self._coords)]
-        """The list of all pixels on the tree"""
+        self._pixels = np.array(
+            [Pixel(i, (x[0], x[1], x[2]), self) for i, x in enumerate(self._coords)], 
+            dtype=object
+        )
+        """The array of all pixels on the tree"""
 
         # 2d array, cols from, rows to -> dist
         self._distances = self._generate_distance_map()
@@ -107,24 +111,19 @@ class Tree():
         return colors
 
     def _generate_distance_map(self) -> list[list[float]]:
-        ret: list[list[float]] = []
-        for fr in self._coords:
-            inter: list[float] = []
-            for to in self._coords:
-                inter.append(dist([x for x in fr], [x for x in to]))
-            ret.append(inter)
-        return ret
+        # Pairwise distance matrix
+        difference_matrix = self._coords[:, np.newaxis, :] - self._coords[np.newaxis, :, :]  # Vector differences between all pairs
+        distance_matrix = np.sqrt(np.sum(difference_matrix**2, axis=-1))  # Use pythagoras to get euclidian distances
+
+        return distance_matrix
 
     def _generate_pixel_distances(self) -> list[list[tuple[Pixel, float]]]:
         ret: list[list[tuple[Pixel, float]]] = []
-        for i in range(len(self._coords)):
-            distances: list[tuple[Pixel, float]] = []
-            for j in range(len(self._coords)):
-                distances.append((self._pixels[j], self._distances[i][j]))
-
-            ret.append(sorted(distances, key=lambda x: x[1]))
-            pass
-
+        for pixel_distances in self._distances:
+            row = list(zip(self._pixels, pixel_distances))  # Pair each pixel with its distances
+            row.sort(key=lambda x: x[1])  # Sort by closest distance
+            ret.append(row)
+        
         return ret
 
 
