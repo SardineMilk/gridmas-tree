@@ -38,13 +38,11 @@ class Tree():
         )
         """The array of all pixels on the tree"""
 
-        # 2d array, cols from, rows to -> dist
         self._distances = self._generate_distance_map()
-        """2d array, cols from, rows to -> dist"""
+        """2d array, rows: pixels, columns: distance to i'th pixel"""
 
-        # 2d array, cols from id, rows sorted array of distance
-        self._pixel_distance_matrix = self._generate_pixel_distances()
-        """2d array, cols from id, rows sorted array of distance"""
+        self._pixel_neighbour_indices = self._generate_pixel_distances()
+        """2d array, rows: pixels, columns: index of n'th closest neighbour"""
 
         self._last_update = time.perf_counter()
         """When the last update took place"""
@@ -118,13 +116,7 @@ class Tree():
         return distance_matrix
 
     def _generate_pixel_distances(self) -> list[list[tuple[Pixel, float]]]:
-        ret: list[list[tuple[Pixel, float]]] = []
-        for pixel_distances in self._distances:
-            row = list(zip(self._pixels, pixel_distances))  # Pair each pixel with its distances
-            row.sort(key=lambda x: x[1])  # Sort by closest distance
-            ret.append(row)
-        
-        return ret
+        return np.argsort(self._distances)
 
 
 def height() -> float: 

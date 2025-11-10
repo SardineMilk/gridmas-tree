@@ -594,10 +594,9 @@ class Pixel(Color):
                 len(neighbors) # 4, nearest pixels
                 ```
         """
-        # Indices of the lowest n values
-        neighbor_indices = np.argsort(self._tree._distances[self._id])[:n]  
+        neighbor_indices = self._tree._pixel_neighbour_indices[self._id, :n]
         return self._tree._pixels[neighbor_indices]
-
+    
     def within(self, d: float) -> list["Pixel"]:
         """Find all pixels that are within a certain radius
 
@@ -607,7 +606,7 @@ class Pixel(Color):
                 neighbors = my_pixel.within(0.4) # pixels within 0.4 radius
                 ```
         """
-        neighbor_indices = np.where(self._tree._distances[self._id] < d)[0]
+        neighbor_indices = np.nonzero(self._tree._distances[self._id] < d)[0]
         return self._tree._pixels[neighbor_indices]
 
 def int2tuple(c: int) -> tuple[int, int, int]:
